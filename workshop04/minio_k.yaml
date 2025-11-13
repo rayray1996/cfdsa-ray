@@ -7,6 +7,45 @@ metadata:
     app: minio
 
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-hsvc
+  namespace: minio-ns
+  labels:
+    app: minio
+spec:
+  clusterIP: None
+  selector:
+    app: minio-po
+  ports:
+    - port: 9000
+      name: http
+      targetPort: 9000
+    - port: 9001
+      name: console
+      targetPort: 9001
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-svc
+  namespace: minio-ns
+  labels:
+    app: minio
+spec:
+  selector:
+    app: minio-po
+  ports:
+    - port: 9000
+      name: http
+      targetPort: 9000
+    - port: 9001
+      name: console
+      targetPort: 9001
+
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -54,36 +93,18 @@ spec:
             limits:
               memory: 250Mi
               cpu: 200m
-          # volumeMounts:
-          #   - name: minio-volume
-          #     mountPath: /data
-  # volumeClaimTemplates:
-  #   - metadata:
-  #       name: minio-volume
-  #     spec:
-  #       accessModes: ["ReadWriteOncePod"]
-  #       resources:
-  #         requests:
-  #           storage: 1Gi
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: minio-hsvc
-  namespace: minio-ns
-  labels:
-    app: minio
-spec:
-  clusterIP: None
-  ports:
-    - port: 9000
-      name: http
-      targetPort: 9000
-    - port: 9001
-      name: console
-      targetPort: 9001
-  selector:
-    app: minio-po
+          volumeMounts:
+            - name: minio-volume
+              mountPath: /data
+  volumeClaimTemplates:
+    - metadata:
+        name: minio-volume
+      spec:
+        storageClassName: do-block-storage
+        accessModes: ["ReadWriteOncePod"]
+        resources:
+          requests:
+            storage: 1Gi
 
 ---
 apiVersion: autoscaling/v2
@@ -128,7 +149,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: minio-hsvc
+                name: minio-svc
                 port:
                   number: 9001
     - host: data.139.59.195.104.sslip.io
@@ -138,6 +159,6 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: minio-hsvc
+                name: minio-svc
                 port:
                   number: 9000
