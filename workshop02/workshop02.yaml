@@ -1,0 +1,56 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cadang-ns
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cadang-deploy
+  namespace: cadang-ns
+  labels:
+    app: cadang
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 30%
+      maxSurge: 30%
+  selector:
+    matchLabels:
+      app: cadang
+      name: cadang-po
+  template:
+    metadata:
+      labels:
+        app: cadang
+        name: cadang-po
+    spec:
+      containers:
+        - name: cadang-image
+          image: rayyt/workshop02:task1
+          # image: kkkkkwannn/day2workshop:v1.2
+          imagePullPolicy: Always
+          ports:
+            - name: web-port
+              containerPort: 3000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cadang-svc
+  namespace: cadang-ns
+  labels:
+    app: cadang
+spec:
+  type: ClusterIP
+  selector:
+    app: cadang
+    name: cadang-po
+  ports:
+    - port: 80
+      targetPort: web-port
