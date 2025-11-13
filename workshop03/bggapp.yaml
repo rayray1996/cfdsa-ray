@@ -49,6 +49,9 @@ spec:
             requests:
               memory: "96Mi"
               cpu: "64m"
+            limits:
+              memory: "96Mi"
+              cpu: "64m"
           livenessProbe:
             initialDelaySeconds: 15
             periodSeconds: 60
@@ -88,3 +91,24 @@ spec:
                 name: bggapp-svc
                 port:
                   number: 5000
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bggapp-hpa
+  namespace: bggns
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bggapp-deploy
+  minReplicas: 1
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
